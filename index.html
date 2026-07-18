@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รำวงมาตรฐาน AI - ท่ารำแสนสนุก</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for beautiful icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Kanit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:ital,wght@0,300;0,400;0,700;0,900;1,400&display=swap" rel="stylesheet">
+    
+    <!-- MediaPipe Hands CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #fbcfe8 0%, #fed7aa 50%, #bfdbfe 100%);
+            overflow-x: hidden;
+            user-select: none;
+        }
+        .pastel-shadow {
+            box-shadow: 0 10px 25px -5px rgba(244, 63, 94, 0.2), 0 8px 10px -6px rgba(244, 63, 94, 0.1);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 3px solid rgba(255, 255, 255, 0.6);
+        }
+        .dance-card-hover {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .dance-card-hover:hover {
+            transform: translateY(-5px) scale(1.02);
+        }
+        /* Custom Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(244, 63, 94, 0.1);
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border-left-color: #ec4899;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col justify-between">
+
+    <header class="p-4 bg-white/70 backdrop-blur-md border-b-4 border-pink-200">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-pink-400 to-yellow-300 text-white p-1 rounded-2xl shadow-md animate-bounce">
+                    <svg viewBox="0 0 100 100" class="w-12 h-12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M40,90 C45,80 45,70 42,60 C48,60 52,70 50,90" fill="#fff" stroke="#ec4899" stroke-width="3"/>
+                      <path d="M38,70 Q46,75 52,70" stroke="#eab308" stroke-width="4" stroke-linecap="round"/>
+                      <path d="M42,60 C40,50 45,40 50,40 C55,40 58,50 50,60 Z" fill="#fff" stroke="#ec4899" stroke-width="3"/>
+                      <path d="M44,47 C35,41 38,31 43,35 C46,37 48,41 48,43" stroke="#ec4899" stroke-width="3" stroke-linecap="round" fill="#fff"/>
+                      <path d="M48,43 C48,37 45,27 50,29 C53,30 52,38 50,43" stroke="#ec4899" stroke-width="3" stroke-linecap="round" fill="#fff"/>
+                      <path d="M51,41 C56,31 58,21 63,24 C64,26 59,36 53,44" stroke="#ec4899" stroke-width="3" stroke-linecap="round" fill="#fff"/>
+                      <path d="M53,44 C60,35 65,27 69,31 C68,34 59,41 54,48" stroke="#ec4899" stroke-width="3" stroke-linecap="round" fill="#fff"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-black tracking-wide text-pink-600 drop-shadow-sm">รำวงมาตรฐาน AI 🎉</h1>
+                    <p class="text-xs text-purple-600 font-bold tracking-wide">เรียนรู้นาฏศิลป์ไทยผ่านเทคโนโลยีตรวจจับนิ้วอัจฉริยะ</p>
+                </div>
+            </div>
+            
+            <!-- Live Game Stats Board -->
+            <div id="gameStats" class="hidden flex items-center space-x-4 md:space-x-6 bg-white/90 p-2 px-5 rounded-2xl border-2 border-pink-300/60 shadow-sm">
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">คะแนน</p>
+                    <p id="scoreVal" class="text-2xl font-black text-pink-500">000</p>
+                </div>
+                <div class="h-8 w-[2px] bg-pink-100"></div>
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">เวลาเหลือ</p>
+                    <p id="timerVal" class="text-2xl font-black text-purple-600">60s</p>
+                </div>
+                <div class="h-8 w-[2px] bg-pink-100"></div>
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-500 font-bold uppercase">จับคู่สำเร็จ</p>
+                    <p id="matchVal" class="text-2xl font-black text-teal-500">0</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center justify-center p-4 max-w-7xl mx-auto w-full">
+        
+        <!-- ================= START SCREEN ================= -->
+        <div id="startScreen" class="w-full max-w-3xl glass-card rounded-3xl p-6 md:p-10 shadow-xl flex flex-col items-center text-center space-y-6">
+            <div class="relative w-44 h-44 flex items-center justify-center bg-gradient-to-tr from-pink-200 via-rose-300 to-yellow-200 rounded-full shadow-lg">
+                <svg viewBox="0 0 100 120" class="w-28 h-32 drop-shadow-md animate-pulse" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Base ring -->
+                  <path d="M30,90 Q50,100 70,90 Q72,95 70,100 Q50,110 30,100 Q28,95 30,90 Z" fill="#eab308" stroke="#ca8a04" stroke-width="2"/>
+                  <!-- Second layer -->
+                  <path d="M32,80 Q50,90 68,80 L65,90 Q50,98 35,90 Z" fill="#facc15" stroke="#ca8a04" stroke-width="1.5"/>
+                  <!-- Ear decorations (Kranok-style wings on sides) -->
+                  <path d="M28,82 Q15,75 22,65 Q25,72 32,78" fill="#eab308" stroke="#ca8a04" stroke-width="1.5"/>
+                  <path d="M72,82 Q85,75 78,65 Q75,72 68,78" fill="#eab308" stroke="#ca8a04" stroke-width="1.5"/>
+                  <!-- Main conical body -->
+                  <path d="M35,78 L42,50 L58,50 L65,78 Q50,86 35,78 Z" fill="#facc15" stroke="#ca8a04" stroke-width="2"/>
+                  <!-- Conical steps -->
+                  <path d="M40,50 L45,32 L55,32 L60,50 Z" fill="#eab308" stroke="#ca8a04" stroke-width="1.5"/>
+                  <path d="M44,32 L47,18 L53,18 L56,32 Z" fill="#facc15" stroke="#ca8a04" stroke-width="1.5"/>
+                  <!-- Spire (ยอดชฎา) -->
+                  <path d="M48,18 L50,2 L52,18 Z" fill="#eab308" stroke="#ca8a04" stroke-width="1.5"/>
+                  <circle cx="50" cy="2" r="2.5" fill="#ef4444"/> <!-- Red jewel on top -->
+                  <!-- Jewels -->
+                  <circle cx="50" cy="64" r="3" fill="#3b82f6"/>
+                  <circle cx="43" cy="66" r="2" fill="#ef4444"/>
+                  <circle cx="57" cy="66" r="2" fill="#ef4444"/>
+                </svg>
+                <span class="absolute -bottom-2 bg-pink-500 text-white text-xs px-3 py-1 rounded-full font-black animate-bounce shadow">10 เพลง 18 ท่ารำ</span>
+            </div>
+            
+            <div class="space-y-3">
+                <h2 class="text-3xl md:text-5xl font-black text-pink-600 drop-shadow">วิชานาฏศัพท์สุดหรรษา</h2>
+                <p class="text-slate-600 max-w-lg mx-auto text-sm md:text-base leading-relaxed font-semibold">
+                    ชวนน้อง ๆ มาลากเส้นจับคู่ <span class="text-pink-500 font-bold">"ชื่อท่ารำ"</span> ไปยัง <span class="text-blue-500 font-bold">"เพลงรำวงมาตรฐาน"</span> ให้ถูกต้องสะสมคะแนน 60 วินาที! เล่นง่าย ๆ เพียงยกปลายนิ้วชี้ขึ้นหน้ากล้อง หรือจะเล่นด้วยการสัมผัส/เมาส์ก็ได้เช่นกันครับ!
+                </p>
+            </div>
+
+            <!-- Features Info Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full text-left pt-2">
+                <div class="bg-pink-50/80 p-4 rounded-2xl border-2 border-pink-100 flex items-start space-x-3">
+                    <div class="mt-1 animate-pulse flex-shrink-0">
+                        <svg viewBox="0 0 100 100" class="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M50,10 C55,35 65,45 90,50 C65,55 55,65 50,90 C45,65 35,55 10,50 C35,45 45,35 50,10 Z" fill="#facc15" stroke="#ca8a04" stroke-width="2"/>
+                          <circle cx="50" cy="50" r="12" fill="#ef4444" stroke="#ca8a04" stroke-width="1.5"/>
+                          <circle cx="50" cy="50" r="4" fill="#ffffff"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-pink-700 text-sm">จับปลายนิ้วชี้ AI</h4>
+                        <p class="text-[11px] text-slate-500 mt-0.5 font-medium">สวมแหวนเวทมนตร์สีเหลือง เคลื่อนที่ลากเส้นตามใจชอบ</p>
+                    </div>
+                </div>
+                <div class="bg-purple-50/80 p-4 rounded-2xl border-2 border-purple-100 flex items-start space-x-3">
+                    <div class="text-purple-500 text-2xl mt-1 animate-pulse"><i class="fa-solid fa-clock"></i></div>
+                    <div>
+                        <h4 class="font-bold text-purple-700 text-sm">รอบโบนัส 10 วินาที</h4>
+                        <p class="text-[11px] text-slate-500 mt-0.5 font-medium">สุ่มรับโบนัสท้าทายความไวทุกๆ 20 วินาที รับคะแนนถล่มทลาย +50!</p>
+                    </div>
+                </div>
+                <div class="bg-blue-50/80 p-4 rounded-2xl border-2 border-blue-100 flex items-start space-x-3">
+                    <div class="text-blue-500 text-2xl mt-1 animate-pulse"><i class="fa-solid fa-star"></i></div>
+                    <div>
+                        <h4 class="font-bold text-blue-700 text-sm">พาสเทลน่ารัก สบายตา</h4>
+                        <p class="text-[11px] text-slate-500 mt-0.5 font-medium">การ์ดคำใบ้ลดเหลือ 3 คำต่อรอบ เล่นง่าย เหมาะสมกับเด็กเล็ก</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Launcher & Status Area -->
+        <div class="w-full max-w-md space-y-4 pt-2">
+            <div id="loadingIndicator" class="hidden flex flex-col items-center justify-center space-y-2">
+                <div class="spinner"></div>
+                <span class="text-xs text-pink-600 font-bold animate-pulse">กำลังอุ่นเครื่องระบบตรวจจับภาพ AI รอกล้องสักครู่จ้า...</span>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                <button id="btnStartAI" class="flex-1 bg-gradient-to-r from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white font-extrabold text-lg px-6 py-4 rounded-2xl shadow-lg hover:shadow-pink-300 transform active:scale-95 transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-camera-rotate"></i>
+                    <span>เริ่มเล่นด้วยกล้อง AI</span>
+                </button>
+                <button id="btnStartMouse" class="bg-white hover:bg-slate-50 text-indigo-600 font-bold text-base px-6 py-4 rounded-2xl border-2 border-indigo-200 active:scale-95 transition-all flex items-center justify-center space-x-2 shadow-sm">
+                    <i class="fa-solid fa-mouse-pointer"></i>
+                    <span>เล่นด้วยเมาส์ / แแตะหน้าจอ</span>
+                </button>
+            </div>
+            <p class="text-[11px] text-slate-400 font-medium">แนะนำให้เล่นในที่สว่างเพื่อให้ระบบประมวลผลความเคลื่อนไหวได้แม่นยำที่สุดนะครับ</p>
+        </div>
+    </div>
+
+    <!-- ================= GAMEPLAY AREA ================= -->
+    <div id="gamePlayArea" class="hidden w-full flex flex-col items-center gap-6 relative">
+        
+        <!-- Main Huge Camera View & Canvas Sandbox (Expanded to max-w-5xl for maximum visibility) -->
+        <div class="w-full max-w-5xl relative aspect-video bg-white/70 rounded-3xl overflow-hidden border-4 border-pink-300 shadow-2xl">
+            <!-- Video Element (Hidden from display, feeds coordinates to canvas) -->
+            <video id="webcamVideo" class="hidden" playsinline autoplay></video>
+            
+            <!-- Game Canvas Layer -->
+            <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+
+            <!-- Floating Canvas Overlay Widgets -->
+            <div class="absolute inset-0 pointer-events-none flex flex-col justify-between p-4">
+                <!-- Top Float bar -->
+                <div class="flex justify-between items-start w-full">
+                    <div id="cameraStatus" class="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-[11px] flex items-center space-x-2 border-2 border-pink-100 shadow-sm">
+                        <span id="cameraStatusDot" class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                        <span id="cameraStatusText" class="text-slate-600 font-bold">รอการเชื่อมต่อ...</span>
+                    </div>
+                    
+                    <div id="bonusIndicator" class="hidden bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-500 text-white text-xs px-4 py-1.5 rounded-full font-black animate-bounce border-2 border-white shadow-md">
+                        🔥 BONUS ROUND! +50 คะแนน
+                    </div>
+                </div>
+
+                <!-- Lower Center Banner -->
+                <div class="w-full max-w-md mx-auto bg-white/95 backdrop-blur-sm p-2 rounded-xl text-center border-2 border-pink-100 shadow-md">
+                    <p class="text-xs text-slate-700 font-bold">
+                        <i class="fa-solid fa-circle-question text-pink-500 animate-pulse"></i> 
+                        <span id="gameHintBanner">ลากเส้นเชื่อมต่อจากท่ารำด้านซ้าย ไปหาเพลงด้านขวาให้ถูกต้อง!</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Match Feedback Overlay Modal inside Frame -->
+            <div id="feedbackModal" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-teal-500/95 text-white font-black text-2xl px-6 py-3 rounded-2xl shadow-xl border-4 border-white transition-all duration-300 scale-0 flex items-center space-x-3 pointer-events-none">
+                <span id="feedbackIcon">🎉</span>
+                <span id="feedbackText">ถูกต้อง! +10</span>
+            </div>
+        </div>
+
+        <!-- Bottom Panel: Compact side-by-side drawers below the camera to maximize camera viewport size -->
+        <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Left Panel: Sidebar Visual Hint Drawer (Pose List) -->
+            <div id="poseDrawer" class="w-full">
+                <div class="glass-card p-4 rounded-2xl border-2 border-pink-200 shadow-md">
+                    <h3 class="text-sm font-black text-pink-600 uppercase tracking-widest text-center mb-3 flex items-center justify-center gap-2">
+                        <svg viewBox="0 0 100 100" class="w-6 h-6 inline-block" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M50,10 C55,35 65,45 90,50 C65,55 55,65 50,90 C45,65 35,55 10,50 C35,45 45,35 50,10 Z" fill="#facc15" stroke="#ca8a04" stroke-width="1.5"/>
+                          <circle cx="50" cy="50" r="10" fill="#ec4899" />
+                        </svg>
+                        <span>ท่ารำนาฏศัพท์รอบนี้</span>
+                    </h3>
+                    <div id="sidebarPoseCards" class="flex flex-row gap-2 justify-center flex-wrap">
+                        <!-- Dynamic side pose text info will render here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Sidebar Visual Hint Drawer (Song List) -->
+            <div id="songDrawer" class="w-full">
+                <div class="glass-card p-4 rounded-2xl border-2 border-blue-200 shadow-md">
+                    <h3 class="text-sm font-black text-blue-600 uppercase tracking-widest text-center mb-3 flex items-center justify-center gap-2">
+                        <svg viewBox="0 0 100 60" class="w-8 h-6 inline-block" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M10,15 Q50,45 90,15 L90,25 Q50,55 10,25 Z" fill="#854d0e" stroke="#451a03" stroke-width="1.5"/>
+                          <path d="M40,43 L45,55 L55,55 L60,43 Z" fill="#a16207" stroke="#451a03" stroke-width="1.5"/>
+                          <line x1="15" y1="14" x2="15" y2="24" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>
+                          <line x1="30" y1="19" x2="30" y2="29" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>
+                          <line x1="45" y1="22" x2="45" y2="32" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>
+                          <line x1="60" y1="22" x2="60" y2="32" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>
+                          <line x1="75" y1="19" x2="75" y2="29" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>
+                          <line x1="90" y1="14" x2="90" y2="24" stroke="#facc15" stroke-width="3" stroke-linecap="round"/>
+                        </svg>
+                        <span>รายชื่อเพลงรอบนี้</span>
+                    </h3>
+                    <div id="sidebarSongCards" class="flex flex-row gap-2 justify-center flex-wrap">
+                        <!-- Dynamic side song text info will render here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= RESULTS & LEADERBOARD ================= -->
+    <div id="resultScreen" class="hidden w-full max-w-xl glass-card border-4 border-pink-300 rounded-3xl p-6 md:p-8 shadow-2xl flex flex-col items-center text-center space-y-6">
+            <div class="relative">
+                <div class="w-32 h-32 bg-gradient-to-tr from-yellow-300 via-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-lg animate-pulse border-4 border-white">
+                    <svg viewBox="0 0 100 120" class="w-20 h-24 drop-shadow-md" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M30,90 Q50,100 70,90 Q72,95 70,100 Q50,110 30,100 Q28,95 30,90 Z" fill="#b45309" stroke="#78350f" stroke-width="2"/>
+                      <path d="M32,80 Q50,90 68,80 L65,90 Q50,98 35,90 Z" fill="#fbbf24" stroke="#78350f" stroke-width="1.5"/>
+                      <path d="M28,82 Q15,75 22,65 Q25,72 32,78" fill="#d97706" stroke="#78350f" stroke-width="1.5"/>
+                      <path d="M72,82 Q85,75 78,65 Q75,72 68,78" fill="#d97706" stroke="#78350f" stroke-width="1.5"/>
+                      <path d="M35,78 L42,50 L58,50 L65,78 Q50,86 35,78 Z" fill="#fbbf24" stroke="#78350f" stroke-width="2"/>
+                      <path d="M40,50 L45,32 L55,32 L60,50 Z" fill="#d97706" stroke="#78350f" stroke-width="1.5"/>
+                      <path d="M44,32 L47,18 L53,18 L56,32 Z" fill="#fbbf24" stroke="#78350f" stroke-width="1.5"/>
+                      <path d="M48,18 L50,2 L52,18 Z" fill="#d97706" stroke="#78350f" stroke-width="1.5"/>
+                      <circle cx="50" cy="2" r="2.5" fill="#ef4444"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <h2 class="text-3xl md:text-4xl font-black text-pink-600 drop-shadow">หมดเวลาการเรียนรู้!</h2>
+                <p class="text-slate-500 font-bold">ยอดเยี่ยมมากครับเด็กๆ มาดูคะแนนการทดสอบของเรากันเลย!</p>
+            </div>
+
+            <!-- Score Summary Dashboard -->
+            <div class="grid grid-cols-3 gap-3 w-full bg-white/70 p-4 rounded-2xl border-2 border-pink-100 shadow-inner">
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">คะแนนรวม</p>
+                    <p id="finalScore" class="text-2xl md:text-3xl font-black text-pink-500 mt-1">0</p>
+                </div>
+                <div class="text-center border-x-2 border-pink-100">
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">ตอบถูกทั้งหมด</p>
+                    <p id="finalMatches" class="text-2xl md:text-3xl font-black text-teal-500 mt-1">0 ครั้ง</p>
+                </div>
+                <div class="text-center">
+                    <p class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">ความเร็วเฉลี่ย</p>
+                    <p id="finalAvgTime" class="text-2xl md:text-3xl font-black text-indigo-500 mt-1">0.0s</p>
+                </div>
+            </div>
+
+            <!-- Evaluation Box -->
+            <div class="p-4 bg-pink-50/80 rounded-2xl border-2 border-pink-100 w-full">
+                <h4 class="font-black text-pink-600 text-base" id="rankTitle">ยศนาฏศิลป์ประดับเพชร</h4>
+                <p class="text-xs text-slate-600 font-semibold mt-1" id="rankDesc">มีความรอบรู้เรื่องท่ารำและเสียงเพลงประกอบได้อย่างคล่องแคล่วว่องไวมาก!</p>
+            </div>
+
+            <!-- Controls -->
+            <div class="w-full max-w-sm">
+                <button id="btnRestart" class="w-full bg-gradient-to-r from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white font-extrabold text-lg py-4 rounded-2xl shadow-md transition transform active:scale-95 flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>เล่นเรียนรู้อีกรอบกันเลย!</span>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="p-4 text-center text-[11px] text-slate-500 bg-white/30 border-t-2 border-pink-100 font-bold">
+        <p>© 2026 AI Thai Dance Game. นวัตกรรมการสอนวิชานาฏศิลป์ไทยร่วมสมัยด้วยปัญญาประดิษฐ์</p>
+    </footer>
+
+    <script>
+        // Sound synth for offline feedback
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'success') {
+                // Happy upward arpeggio
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                osc.start(now);
+                osc.stop(now + 0.5);
+            } else if (type === 'fail') {
+                // Sad buzzer sound
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now); // A3
+                osc.frequency.linearRampToValueAtTime(110, now + 0.3); // A2
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'bonus') {
+                // Sci-fi high rise
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(1800, now + 0.6);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            } else if (type === 'click') {
+                // Subtle interface feedback
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, now);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'gameover') {
+                // Beautiful fanfare melody
+                const notes = [392, 523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    const oscNote = audioCtx.createOscillator();
+                    const gainNote = audioCtx.createGain();
+                    oscNote.type = 'triangle';
+                    oscNote.frequency.value = freq;
+                    oscNote.connect(gainNote);
+                    gainNote.connect(audioCtx.destination);
+                    
+                    gainNote.gain.setValueAtTime(0.1, now + idx * 0.12);
+                    gainNote.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.3);
+                    oscNote.start(now + idx * 0.12);
+                    oscNote.stop(now + idx * 0.12 + 0.3);
+                });
+            }
+        }
+
+        // Comprehensive mapping of the 10 standard songs and 18 classical poses
+        const GAME_CURRICULUM = [
+            { id: 1, pose: "ท่าสอดสร้อยมาลา", song: "เพลงงามแสงเดือน" },
+            { id: 2, pose: "ท่าชักแป้งผัดหน้า", song: "เพลงชาวไทย" },
+            { id: 3, pose: "ท่ารำส่าย", song: "เพลงรำมาซิมารำ" },
+            { id: 4, pose: "ท่าสอดสร้อยมาลาแปลง", song: "เพลงคืนเดือนหงาย" },
+            { id: 5, pose: "ท่าแขกเต้าเข้ารัง", song: "เพลงดวงจันทร์วันเพ็ญ" },
+            { id: 6, pose: "ท่าผาลาเพียงไหล่", song: "เพลงดวงจันทร์วันเพ็ญ" },
+            { id: 7, pose: "ท่ารำยั่ว", song: "เพลงดอกไม้ของชาติ" },
+            { id: 8, pose: "ท่าพรหมสี่หน้า", song: "เพลงหญิงไทยใจงาม" },
+            { id: 9, pose: "ท่ายูงฟ้อนหาง", song: "เพลงหญิงไทยใจงาม" },
+            { id: 10, pose: "ท่าช้างประสานงา", song: "เพลงดวงจันทร์ขวัญฟ้า" },
+            { id: 11, pose: "ท่าจันทร์ทรงกลดแปลง", song: "เพลงดวงจันทร์ขวัญฟ้า" },
+            { id: 12, pose: "ท่าชะนีร่ายไม้ (หญิง)", song: "เพลงยอดชายใจหาญ" },
+            { id: 13, pose: "ท่าจ่อเพลิงกัลป์ (ชาย)", song: "เพลงยอดชายใจหาญ" },
+            { id: 14, pose: "ท่าขัดจางนาง (หญิง)", song: "เพลงบูชานักรบ" },
+            { id: 15, pose: "ท่าล่อแก้ว (หญิง)", song: "เพลงบูชานักรบ" },
+            { id: 16, pose: "ท่าจันทร์ทรงกลดต่ำ (ชาย)", song: "เพลงบูชานักรบ" },
+            { id: 17, pose: "ท่าขอแก้ว (ชาย)", song: "เพลงบูชานักรบ" }
+        ];
+
+        let score = 0;
+        let matches = 0;
+        let timeLeft = 60;
+        let totalAttemptsTime = 0;
+        let matchTimestamps = [];
+        let gameActive = false;
+        let useCamera = false;
+        let currentLevelItems = [];
+        let poseNodes = [];
+        let songNodes = [];
+        
+        // Active drag trace logic
+        let draggingPose = null; 
+        let mouseX = 0;
+        let mouseY = 0;
+
+        // Multiplier & Bonus systems
+        let lastMatchTime = 0;
+        let bonusActive = false;
+        let bonusTimer = null;
+        let nextBonusTimer = null;
+        let timerInterval = null;
+
+        // Visual design parameters (Bright pastels!)
+        const nodeWidth = 180;
+        const nodeHeight = 65;
+
+        // References to DOM elements
+        const startScreen = document.getElementById("startScreen");
+        const gamePlayArea = document.getElementById("gamePlayArea");
+        const resultScreen = document.getElementById("resultScreen");
+        const gameStats = document.getElementById("gameStats");
+        const gameCanvas = document.getElementById("gameCanvas");
+        const canvasCtx = gameCanvas.getContext("2d");
+        const webcamVideo = document.getElementById("webcamVideo");
+
+        // Buttons
+        const btnStartAI = document.getElementById("btnStartAI");
+        const btnStartMouse = document.getElementById("btnStartMouse");
+        const btnRestart = document.getElementById("btnRestart");
+
+        // Stats Display Elements
+        const scoreVal = document.getElementById("scoreVal");
+        const timerVal = document.getElementById("timerVal");
+        const matchVal = document.getElementById("matchVal");
+        const cameraStatusDot = document.getElementById("cameraStatusDot");
+        const cameraStatusText = document.getElementById("cameraStatusText");
+        const bonusIndicator = document.getElementById("bonusIndicator");
+        const gameHintBanner = document.getElementById("gameHintBanner");
+
+        // AI tracking hand coordinate memory
+        let handTrackCursor = { x: 0, y: 0, active: false, isHolding: false, holdTimer: 0, hoverTarget: null };
+
+        function adjustCanvasResolution() {
+            const rect = gameCanvas.getBoundingClientRect();
+            gameCanvas.width = rect.width;
+            gameCanvas.height = rect.height;
+            // Force redraw coordinates relative to new dimension
+            if (gameActive) {
+                relocateGameNodes();
+            }
+        }
+        window.addEventListener("resize", adjustCanvasResolution);
+
+        btnStartAI.addEventListener("click", () => {
+            playSound('click');
+            initializeSession(true);
+        });
+
+        btnStartMouse.addEventListener("click", () => {
+            playSound('click');
+            initializeSession(false);
+        });
+
+        btnRestart.addEventListener("click", () => {
+            playSound('click');
+            resultScreen.classList.add("hidden");
+            startScreen.classList.remove("hidden");
+            gamePlayArea.classList.add("hidden");
+            gameStats.classList.add("hidden");
+        });
+
+        async function initializeSession(cameraEnabled) {
+            useCamera = cameraEnabled;
+            document.getElementById("loadingIndicator").classList.remove("hidden");
+            
+            if (useCamera) {
+                cameraStatusDot.className = "w-2.5 h-2.5 rounded-full bg-yellow-400 animate-ping";
+                cameraStatusText.textContent = "กำลังเชื่อมต่อกล้อง...";
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: 640, height: 480, facingMode: "user" }
+                    });
+                    webcamVideo.srcObject = stream;
+                    webcamVideo.play();
+
+                    cameraStatusDot.className = "w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse";
+                    cameraStatusText.textContent = "กล้องพร้อมใช้งาน";
+
+                    // Initialize MediaPipe Hands
+                    const handsObj = new Hands({
+                        locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                    });
+
+                    handsObj.setOptions({
+                        maxNumHands: 1,
+                        modelComplexity: 1,
+                        minDetectionConfidence: 0.6,
+                        minTrackingConfidence: 0.6
+                    });
+
+                    handsObj.onResults(onAIHandProcessed);
+
+                    const cameraInstance = new Camera(webcamVideo, {
+                        onFrame: async () => {
+                            if (gameActive && useCamera) {
+                                await handsObj.send({ image: webcamVideo });
+                            }
+                        },
+                        width: 640,
+                        height: 480
+                    });
+                    
+                    cameraInstance.start();
+                    startGameLoop();
+
+                } catch (err) {
+                    console.error("Camera access failed:", err);
+                    alert("ไม่สามารถเข้าถึงกล้องเว็บแคมได้ จะเปลี่ยนระบบไปใช้ เมาส์/สัมผัส หน้าจอแทนจ้า");
+                    useCamera = false;
+                    cameraStatusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+                    cameraStatusText.textContent = "ใช้ระบบ สัมผัส / เมาส์";
+                    startGameLoop();
+                }
+            } else {
+                cameraStatusDot.className = "w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse";
+                cameraStatusText.textContent = "ระบบ สัมผัส / เมาส์";
+                startGameLoop();
+            }
+        }
+
+        function startGameLoop() {
+            document.getElementById("loadingIndicator").classList.add("hidden");
+            startScreen.classList.add("hidden");
+            gamePlayArea.classList.remove("hidden");
+            gameStats.classList.remove("hidden");
+
+            // Reset States
+            score = 0;
+            matches = 0;
+            timeLeft = 60;
+            totalAttemptsTime = 0;
+            matchTimestamps = [];
+            lastMatchTime = Date.now();
+            gameActive = true;
+            draggingPose = null;
+            bonusActive = false;
+            
+            scoreVal.textContent = "00";
+            timerVal.textContent = "60s";
+            matchVal.textContent = "0";
+
+            adjustCanvasResolution();
+            generateLevelRound();
+
+            // Clear timers
+            clearInterval(timerInterval);
+            clearTimeout(bonusTimer);
+            clearTimeout(nextBonusTimer);
+
+            // Turn on intervals
+            timerInterval = setInterval(updateGameplayTimer, 1000);
+            scheduleBonusCycle();
+
+            // Core Render Frame Loops
+            requestAnimationFrame(renderEngineFrame);
+        }
+
+        function generateLevelRound() {
+            // Pick 3 random dance items from standard curriculum list
+            const shuffledPool = [...GAME_CURRICULUM].sort(() => 0.5 - Math.random());
+            currentLevelItems = shuffledPool.slice(0, 3);
+
+            relocateGameNodes();
+        }
+
+        function relocateGameNodes() {
+            if (!gameActive) return;
+            const w = gameCanvas.width;
+            const h = gameCanvas.height;
+
+            poseNodes = [];
+            songNodes = [];
+
+            // Disperse Poses vertically along the Left side
+            currentLevelItems.forEach((item, index) => {
+                const ratioY = (index + 0.5) / 3;
+                const poseY = ratioY * (h - 100) + 50;
+                const poseX = w * 0.22; // Well within safety margin
+
+                poseNodes.push({
+                    id: item.id,
+                    text: item.pose,
+                    correctSong: item.song,
+                    x: poseX,
+                    y: poseY,
+                    origX: poseX,
+                    origY: poseY,
+                    isMatched: false
+                });
+            });
+
+            // Disperse matching target Songs on the Right side (Shuffled to prevent simple layout mapping)
+            const targetSongs = currentLevelItems.map(item => item.song).sort(() => 0.5 - Math.random());
+            
+            targetSongs.forEach((songText, index) => {
+                const ratioY = (index + 0.5) / 3;
+                const songY = ratioY * (h - 100) + 50;
+                const songX = w * 0.78; // Balanced right margin
+
+                songNodes.push({
+                    text: songText,
+                    x: songX,
+                    y: songY,
+                    isMatched: false
+                });
+            });
+
+            renderSidebarVisualDrawers();
+        }
+
+        function renderSidebarVisualDrawers() {
+            const sidebarPose = document.getElementById("sidebarPoseCards");
+            const sidebarSong = document.getElementById("sidebarSongCards");
+
+            sidebarPose.innerHTML = poseNodes.map(p => `
+                <div class="px-3 py-1.5 bg-pink-100/90 text-pink-700 text-xs font-bold rounded-lg border border-pink-200">
+                    🌸 ${p.text}
+                </div>
+            `).join('');
+
+            sidebarSong.innerHTML = songNodes.map(s => `
+                <div class="px-3 py-1.5 bg-blue-100/90 text-blue-700 text-xs font-bold rounded-lg border border-blue-200">
+                    🎵 ${s.text}
+                </div>
+            `).join('');
+        }
+
+        function updateGameplayTimer() {
+            if (!gameActive) return;
+
+            timeLeft--;
+            timerVal.textContent = timeLeft + "s";
+
+            // Gentle pulsing warning clock sound when under 10s
+            if (timeLeft <= 10) {
+                playSound('click');
+                timerVal.className = "text-2xl font-black text-rose-500 animate-ping";
+            } else {
+                timerVal.className = "text-2xl font-black text-purple-600";
+            }
+
+            if (timeLeft <= 0) {
+                triggerGameOver();
+            }
+        }
+
+        function scheduleBonusCycle() {
+            if (!gameActive) return;
+
+            // Triggering Bonus interval round every 20 seconds
+            nextBonusTimer = setTimeout(() => {
+                triggerBonusRound();
+                // Schedule next
+                setTimeout(scheduleBonusCycle, 10000); // Resume planning next cycle after current bonus finishes
+            }, 20000);
+        }
+
+        function triggerBonusRound() {
+            if (!gameActive) return;
+
+            bonusActive = true;
+            bonusIndicator.classList.remove("hidden");
+            gameHintBanner.textContent = "🌟 รอบพิเศษโบนัสคูณใหญ่! รีบจับคู่ท่ารำ รับทันที +50 คะแนน!";
+            playSound('bonus');
+
+            // Find an item not already fully matched, and tag it as Special Bonus Glow
+            const activeUnmatched = poseNodes.find(p => !p.isMatched);
+            if (activeUnmatched) {
+                activeUnmatched.isSpecialBonus = true;
+            }
+
+            // Expiry bonus timer
+            bonusTimer = setTimeout(() => {
+                deactivateBonusRound();
+            }, 10000);
+        }
+
+        function deactivateBonusRound() {
+            bonusActive = false;
+            bonusIndicator.classList.add("hidden");
+            gameHintBanner.textContent = "ลากเส้นเชื่อมต่อจากท่ารำด้านซ้าย ไปหาเพลงด้านขวาให้ถูกต้อง!";
+            poseNodes.forEach(p => p.isSpecialBonus = false);
+        }
+
+        function onAIHandProcessed(results) {
+            if (!gameActive || !useCamera) return;
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const handLandmarks = results.multiHandLandmarks[0];
+                
+                // Get the coordinates of the index finger tip (landmark 8)
+                const indexTip = handLandmarks[8];
+
+                // Map coordinates securely to mirror layout
+                // Since our canvas mirrors video, (1 - indexTip.x) keeps hand moving intuitively
+                handTrackCursor.x = (1 - indexTip.x) * gameCanvas.width;
+                handTrackCursor.y = indexTip.y * gameCanvas.height;
+                handTrackCursor.active = true;
+
+                // Handle Hover Locking connection mechanism for seamless AR control without physical grabbing
+                processARHoverConnection();
+            } else {
+                handTrackCursor.active = false;
+            }
+        }
+
+        function processARHoverConnection() {
+            if (!handTrackCursor.active) return;
+
+            // Check if cursor hovers over any Pose node (Left Box)
+            if (!draggingPose) {
+                const targetNode = poseNodes.find(pose => {
+                    if (pose.isMatched) return false;
+                    return Math.hypot(handTrackCursor.x - pose.x, handTrackCursor.y - pose.y) < nodeWidth / 1.5;
+                });
+
+                if (targetNode) {
+                    if (handTrackCursor.hoverTarget === targetNode) {
+                        handTrackCursor.holdTimer += 1.5; // Progressive hover gauge
+                        if (handTrackCursor.holdTimer >= 30) { // Lock-grab locked
+                            draggingPose = targetNode;
+                            playSound('click');
+                        }
+                    } else {
+                        handTrackCursor.hoverTarget = targetNode;
+                        handTrackCursor.holdTimer = 0;
+                    }
+                } else {
+                    handTrackCursor.hoverTarget = null;
+                    handTrackCursor.holdTimer = 0;
+                }
+            } else {
+                // Already holding a node, check if hovering over any Song node (Right Box)
+                const targetSong = songNodes.find(song => {
+                    if (song.isMatched) return false;
+                    return Math.hypot(handTrackCursor.x - song.x, handTrackCursor.y - song.y) < nodeWidth / 1.5;
+                });
+
+                if (targetSong) {
+                    // Match attempt triggered!
+                    evaluateMatchAttempt(draggingPose, targetSong);
+                    draggingPose = null;
+                }
+            }
+        }
+
+        function evaluateMatchAttempt(pose, song) {
+            if (!pose || !song) return;
+
+            const now = Date.now();
+            const responseTime = (now - lastMatchTime) / 1000;
+            lastMatchTime = now;
+
+            if (pose.correctSong === song.text) {
+                // Correct Match
+                pose.isMatched = true;
+                song.isMatched = true;
+                
+                let pointsEarned = 10;
+                if (bonusActive && pose.isSpecialBonus) {
+                    pointsEarned = 50;
+                    deactivateBonusRound();
+                }
+
+                score += pointsEarned;
+                matches++;
+                scoreVal.textContent = score;
+                matchVal.textContent = matches;
+
+                // Track analytics
+                matchTimestamps.push(responseTime);
+                totalAttemptsTime += responseTime;
+
+                // Trigger Particles Success animation
+                createMatchExplosion(song.x, song.y);
+                triggerToastAlert("✅", `ถูกต้อง! +${pointsEarned}`);
+                playSound('success');
+
+                // Check level completion
+                const allDone = poseNodes.every(p => p.isMatched);
+                if (allDone) {
+                    setTimeout(() => {
+                        generateLevelRound();
+                    }, 800);
+                }
+
+            } else {
+                // Incorrect Match
+                score = Math.max(0, score - 5);
+                scoreVal.textContent = score;
+                
+                triggerToastAlert("❌", "ยังไม่ถูกจ้า! -5");
+                playSound('fail');
+            }
+        }
+
+        function triggerToastAlert(icon, msg) {
+            const feedbackModal = document.getElementById("feedbackModal");
+            const feedbackIcon = document.getElementById("feedbackIcon");
+            const feedbackText = document.getElementById("feedbackText");
+
+            feedbackIcon.textContent = icon;
+            feedbackText.textContent = msg;
+
+            feedbackModal.classList.remove("scale-0");
+            feedbackModal.classList.add("scale-100");
+
+            setTimeout(() => {
+                feedbackModal.classList.remove("scale-100");
+                feedbackModal.classList.add("scale-0");
+            }, 1200);
+        }
+
+        let particleArray = [];
+        function createMatchExplosion(x, y) {
+            for (let i = 0; i < 20; i++) {
+                particleArray.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    color: `hsla(${Math.random() * 360}, 100%, 75%, 1)`,
+                    size: Math.random() * 6 + 4,
+                    alpha: 1,
+                    decay: Math.random() * 0.02 + 0.01
+                });
+            }
+        }
+
+        function updateAndRenderParticles() {
+            for (let i = particleArray.length - 1; i >= 0; i--) {
+                const p = particleArray[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+
+                if (p.alpha <= 0) {
+                    particleArray.splice(i, 1);
+                } else {
+                    canvasCtx.save();
+                    canvasCtx.globalAlpha = p.alpha;
+                    canvasCtx.fillStyle = p.color;
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    canvasCtx.fill();
+                    canvasCtx.restore();
+                }
+            }
+        }
+
+        // Listeners for classic controls
+        gameCanvas.addEventListener("mousedown", (e) => {
+            if (!gameActive || useCamera) return;
+            const rect = gameCanvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+
+            // Detect collision on Left Pose nodes
+            const foundNode = poseNodes.find(pose => {
+                if (pose.isMatched) return false;
+                return Math.abs(clickX - pose.x) < nodeWidth/2 && Math.abs(clickY - pose.y) < nodeHeight/2;
+            });
+
+            if (foundNode) {
+                draggingPose = foundNode;
+                mouseX = clickX;
+                mouseY = clickY;
+                playSound('click');
+            }
+        });
+
+        gameCanvas.addEventListener("mousemove", (e) => {
+            if (!gameActive) return;
+            const rect = gameCanvas.getBoundingClientRect();
+            mouseX = e.clientX - rect.left;
+            mouseY = e.clientY - rect.top;
+        });
+
+        gameCanvas.addEventListener("mouseup", (e) => {
+            if (!gameActive || useCamera || !draggingPose) return;
+            const rect = gameCanvas.getBoundingClientRect();
+            const releaseX = e.clientX - rect.left;
+            const releaseY = e.clientY - rect.top;
+
+            // Check if hovered over target song
+            const matchedSong = songNodes.find(song => {
+                if (song.isMatched) return false;
+                return Math.abs(releaseX - song.x) < nodeWidth/2 && Math.abs(releaseY - song.y) < nodeHeight/2;
+            });
+
+            if (matchedSong) {
+                evaluateMatchAttempt(draggingPose, matchedSong);
+            }
+            
+            draggingPose = null;
+        });
+
+        // Touch handlers (Mobile layout support)
+        gameCanvas.addEventListener("touchstart", (e) => {
+            if (!gameActive || useCamera || e.touches.length === 0) return;
+            const rect = gameCanvas.getBoundingClientRect();
+            const clickX = e.touches[0].clientX - rect.left;
+            const clickY = e.touches[0].clientY - rect.top;
+
+            const foundNode = poseNodes.find(pose => {
+                if (pose.isMatched) return false;
+                return Math.abs(clickX - pose.x) < nodeWidth/2 && Math.abs(clickY - pose.y) < nodeHeight/2;
+            });
+
+            if (foundNode) {
+                draggingPose = foundNode;
+                mouseX = clickX;
+                mouseY = clickY;
+                playSound('click');
+            }
+        });
+
+        gameCanvas.addEventListener("touchmove", (e) => {
+            if (!gameActive || useCamera || !draggingPose || e.touches.length === 0) return;
+            const rect = gameCanvas.getBoundingClientRect();
+            mouseX = e.touches[0].clientX - rect.left;
+            mouseY = e.touches[0].clientY - rect.top;
+            e.preventDefault(); // Stop mobile elastic scroll page refresh
+        });
+
+        gameCanvas.addEventListener("touchend", (e) => {
+            if (!gameActive || useCamera || !draggingPose) return;
+            // Target coordinates evaluated using last mouse coordinates
+            const matchedSong = songNodes.find(song => {
+                if (song.isMatched) return false;
+                return Math.abs(mouseX - song.x) < nodeWidth/2 && Math.abs(mouseY - song.y) < nodeHeight/2;
+            });
+
+            if (matchedSong) {
+                evaluateMatchAttempt(draggingPose, matchedSong);
+            }
+            draggingPose = null;
+        });
+
+        function renderEngineFrame() {
+            if (!gameActive) return;
+
+            // Clear Background
+            canvasCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+            // Paint Camera Feed mirrored or a beautiful Pastel Background Canvas
+            if (useCamera && webcamVideo.readyState === webcamVideo.HAVE_ENOUGH_DATA) {
+                canvasCtx.save();
+                // ONLY mirror the webcam video frame so the player acts as a mirror!
+                canvasCtx.translate(gameCanvas.width, 0);
+                canvasCtx.scale(-1, 1);
+                canvasCtx.drawImage(webcamVideo, 0, 0, gameCanvas.width, gameCanvas.height);
+                canvasCtx.restore();
+
+                // Add glass overlay tint
+                canvasCtx.fillStyle = "rgba(255, 255, 255, 0.4)";
+                canvasCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+            } else {
+                // Fallback Soft Pastel Dream radial gradient
+                const baseGrad = canvasCtx.createRadialGradient(
+                    gameCanvas.width / 2, gameCanvas.height / 2, 20,
+                    gameCanvas.width / 2, gameCanvas.height / 2, gameCanvas.width / 1.5
+                );
+                baseGrad.addColorStop(0, "#ffe4e6"); // pastel pink
+                baseGrad.addColorStop(0.5, "#e0f2fe"); // pastel blue
+                baseGrad.addColorStop(1, "#fef08a"); // pastel yellow
+                canvasCtx.fillStyle = baseGrad;
+                canvasCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
+            }
+
+            // Draw Connection Dragging trail line
+            renderTracingPaths();
+
+            // Render Nodes
+            renderInteractiveNodes();
+
+            // Particles Update
+            updateAndRenderParticles();
+
+            // Render Magic AI Cursor
+            renderTrackCursors();
+
+            requestAnimationFrame(renderEngineFrame);
+        }
+
+        function renderTracingPaths() {
+            if (draggingPose) {
+                canvasCtx.save();
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(draggingPose.x, draggingPose.y);
+                
+                const targetX = useCamera ? handTrackCursor.x : mouseX;
+                const targetY = useCamera ? handTrackCursor.y : mouseY;
+                canvasCtx.lineTo(targetX, targetY);
+
+                // Dashed neon pink/purple line effect
+                canvasCtx.lineWidth = 4;
+                canvasCtx.strokeStyle = draggingPose.isSpecialBonus ? "#ec4899" : "#6366f1";
+                canvasCtx.setLineDash([10, 5]);
+                canvasCtx.lineDashOffset = -(Date.now() / 25) % 30;
+                canvasCtx.shadowBlur = 10;
+                canvasCtx.shadowColor = draggingPose.isSpecialBonus ? "#f43f5e" : "#818cf8";
+                canvasCtx.stroke();
+                canvasCtx.restore();
+            }
+        }
+
+        function renderInteractiveNodes() {
+            // Left Side: Poses (Charming Pastel Rose-Orange Theme)
+            poseNodes.forEach(pose => {
+                if (pose.isMatched) return;
+
+                canvasCtx.save();
+                
+                // Add elegant soft shadow
+                canvasCtx.shadowColor = "rgba(244, 63, 94, 0.2)";
+                canvasCtx.shadowBlur = 10;
+                canvasCtx.shadowOffsetY = 4;
+
+                // Check Hover locks
+                const isHovered = draggingPose === pose || 
+                                  (useCamera && handTrackCursor.hoverTarget === pose);
+
+                // Colors
+                let startColor = "#fed7aa"; // Pastel peach
+                let endColor = "#fecaca"; // Pastel rose
+                let strokeColor = "#fb7185";
+
+                if (pose.isSpecialBonus) {
+                    startColor = "#ffe4e6";
+                    endColor = "#fbcfe8"; // Pastel Hot Magenta Glow
+                    strokeColor = "#ec4899";
+                    canvasCtx.shadowColor = "#f43f5e";
+                    canvasCtx.shadowBlur = isHovered ? 25 : 15;
+                } else if (isHovered) {
+                    canvasCtx.shadowBlur = 20;
+                    startColor = "#ffedd5";
+                    endColor = "#ffe4e6";
+                }
+
+                const grad = canvasCtx.createLinearGradient(pose.x - nodeWidth/2, pose.y, pose.x + nodeWidth/2, pose.y);
+                grad.addColorStop(0, startColor);
+                grad.addColorStop(1, endColor);
+
+                canvasCtx.fillStyle = grad;
+                canvasCtx.strokeStyle = strokeColor;
+                canvasCtx.lineWidth = pose.isSpecialBonus ? 4.5 : 2.5;
+
+                canvasCtx.beginPath();
+                canvasCtx.roundRect(pose.x - nodeWidth/2, pose.y - nodeHeight/2, nodeWidth, nodeHeight, 20);
+                canvasCtx.fill();
+                canvasCtx.stroke();
+
+                // Typography - Dark Maroon for ultimate child-friendly contrast
+                canvasCtx.fillStyle = "#4c0519";
+                canvasCtx.font = "bold 15px 'Kanit'";
+                canvasCtx.textAlign = "center";
+                canvasCtx.textBaseline = "middle";
+                
+                let displayText = pose.text;
+                if (pose.isSpecialBonus) {
+                    displayText = "🌟 " + displayText;
+                }
+                canvasCtx.fillText(displayText, pose.x, pose.y);
+
+                // Hover Progressive Loading Ring (AR helper visualizer)
+                if (useCamera && handTrackCursor.hoverTarget === pose && !draggingPose) {
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(pose.x + nodeWidth/2 - 20, pose.y, 8, 0, Math.PI * 2);
+                    canvasCtx.strokeStyle = "rgba(0,0,0,0.1)";
+                    canvasCtx.lineWidth = 3;
+                    canvasCtx.stroke();
+
+                    // Active progress ring
+                    canvasCtx.beginPath();
+                    const progressAngle = (handTrackCursor.holdTimer / 30) * Math.PI * 2;
+                    canvasCtx.arc(pose.x + nodeWidth/2 - 20, pose.y, 8, -Math.PI/2, -Math.PI/2 + progressAngle);
+                    canvasCtx.strokeStyle = "#db2777";
+                    canvasCtx.lineWidth = 3;
+                    canvasCtx.stroke();
+                }
+
+                canvasCtx.restore();
+            });
+
+            // Right Side: Songs (Fresh Pastel Blue-Teal Theme)
+            songNodes.forEach(song => {
+                if (song.isMatched) return;
+
+                canvasCtx.save();
+                canvasCtx.shadowColor = "rgba(59, 130, 246, 0.15)";
+                canvasCtx.shadowBlur = 10;
+                canvasCtx.shadowOffsetY = 4;
+
+                const isTargetHovered = (useCamera && draggingPose && Math.hypot(handTrackCursor.x - song.x, handTrackCursor.y - song.y) < nodeWidth/1.5);
+
+                let startColor = "#dbeafe"; // Pastel blue
+                let endColor = "#ccfbf1"; // Pastel teal
+                let strokeColor = "#60a5fa";
+
+                if (isTargetHovered) {
+                    canvasCtx.shadowBlur = 20;
+                    startColor = "#eff6ff";
+                    endColor = "#f0fdfa";
+                    strokeColor = "#3b82f6";
+                }
+
+                const grad = canvasCtx.createLinearGradient(song.x - nodeWidth/2, song.y, song.x + nodeWidth/2, song.y);
+                grad.addColorStop(0, startColor);
+                grad.addColorStop(1, endColor);
+
+                canvasCtx.fillStyle = grad;
+                canvasCtx.strokeStyle = strokeColor;
+                canvasCtx.lineWidth = 2.5;
+
+                canvasCtx.beginPath();
+                canvasCtx.roundRect(song.x - nodeWidth/2, song.y - nodeHeight/2, nodeWidth, nodeHeight, 20);
+                canvasCtx.fill();
+                canvasCtx.stroke();
+
+                // Typography - Deep Indigo for readable, comfortable contrast
+                canvasCtx.fillStyle = "#1e3a8a";
+                canvasCtx.font = "bold 14px 'Kanit'";
+                canvasCtx.textAlign = "center";
+                canvasCtx.textBaseline = "middle";
+
+                // Handle multi-line wrapping nicely if song name is long
+                canvasCtx.fillText(song.text, song.x, song.y);
+
+                canvasCtx.restore();
+            });
+        }
+
+        function renderTrackCursors() {
+            if (useCamera && handTrackCursor.active) {
+                canvasCtx.save();
+                
+                // Outer Ring Glow
+                canvasCtx.beginPath();
+                canvasCtx.arc(handTrackCursor.x, handTrackCursor.y, 16, 0, Math.PI * 2);
+                canvasCtx.fillStyle = "rgba(253, 224, 71, 0.4)";
+                canvasCtx.fill();
+                
+                // Inner Yellow Magic Pearl Point
+                canvasCtx.beginPath();
+                canvasCtx.arc(handTrackCursor.x, handTrackCursor.y, 8, 0, Math.PI * 2);
+                canvasCtx.fillStyle = "#facc15";
+                canvasCtx.strokeStyle = "#ffffff";
+                canvasCtx.lineWidth = 2;
+                canvasCtx.fill();
+                canvasCtx.stroke();
+                
+                canvasCtx.restore();
+            }
+        }
+
+        function triggerGameOver() {
+            gameActive = false;
+            clearInterval(timerInterval);
+            clearTimeout(bonusTimer);
+            clearTimeout(nextBonusTimer);
+
+            // Pause Webcam if active
+            if (useCamera) {
+                const stream = webcamVideo.srcObject;
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                }
+                webcamVideo.srcObject = null;
+            }
+
+            // Calculations
+            const avgSpeed = matches > 0 ? (totalAttemptsTime / matches).toFixed(1) : "0.0";
+
+            // Map Rank Evaluations based on performance
+            let evalTitle = "นาฏศิลป์ฝึกหัด 🌸";
+            let evalDesc = "เริ่มต้นเรียนรู้รำวงมาตรฐานได้ดี! ลองมาจับคู่อีกครั้งเพื่อสะสมความแม่นยำเพิ่มเติมกันนะครับ";
+
+            if (score >= 120) {
+                evalTitle = "ยอดฝีมือปัญญาประดิษฐ์เพชรวิจิตร 💎🏆";
+                evalDesc = "ยอดเยี่ยมระดับยอดเกียรติยศ! คุณมีความจำที่เป็นเลิศ เชื่อมโยงและจัดระเบียบท่ารำได้ว่องไวและแม่นยำที่สุด!";
+            } else if (score >= 70) {
+                evalTitle = "ปรมาจารย์รำวงนาฏศิลป์รุ่นเยาว์ 🌟";
+                evalDesc = "ความสามารถระดับมืออาชีพ! รู้จักเพลงประกอบรำวงมาตรฐานครบถ้วนอย่างสมบูรณ์แบบ แววศิลปินโดดเด่นมากจ้า";
+            } else if (score >= 30) {
+                evalTitle = "อัครศิลปินน้อยแสนสนุก 🎉";
+                evalDesc = "เก่งมากเลยครับ! เข้าใจเพลงรำวงมาตรฐานและรำวงได้อย่างสนุกสนานเกือบครบครัน พัฒนาต่อไปได้ไกลแน่นอน!";
+            }
+
+            // Display Screen setup
+            document.getElementById("rankTitle").textContent = evalTitle;
+            document.getElementById("rankDesc").textContent = evalDesc;
+            
+            document.getElementById("finalScore").textContent = score + " คะแนน";
+            document.getElementById("finalMatches").textContent = matches + " ครั้ง";
+            document.getElementById("finalAvgTime").textContent = avgSpeed + " วินาที";
+
+            gamePlayArea.classList.add("hidden");
+            gameStats.classList.add("hidden");
+            resultScreen.classList.remove("hidden");
+            playSound('gameover');
+        }
+    </script>
+</body>
+</html>
